@@ -1,0 +1,29 @@
+# ----- FILE STRUCTURE ---- #
+# fastapi/
+#   app/
+#   data/
+#   env/
+#   secrets/
+#     dbconfig.txt
+#     pgadmin_pass.txt
+#     postgres_pass.txt
+#   .gitigore
+#   docker-compose.yml
+#   requirements.txt
+
+# only in the root folder
+/env
+/secrets
+
+# to protect the api keys, 
+# create a .env.example file at the very last stage
+.env
+
+# database files, can be large and frequently changing
+/data
+
+# __pycache__ anywhere
+__pycache__/
+
+# vscode configurations
+.vscode
