@@ -14,6 +14,3 @@ class Post(Base):
     published: Mapped[bool] = mapped_column(Boolean, default=True)
     username: Mapped[Union[str, None]] = mapped_column(String, default=None)
     rating: Mapped[Union[int, None]] = mapped_column(Integer, nullable=True, default=None)
-
-    class Config:
-        orm_mode = True
