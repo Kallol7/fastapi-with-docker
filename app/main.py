@@ -1,9 +1,11 @@
 from fastapi import FastAPI, HTTPException, Response, status
 from fastapi.responses import RedirectResponse
-from typing import Union
-from pydantic import BaseModel
+
 import psycopg
 from psycopg.rows import dict_row
+
+from . import models, schemas
+from .database import engine, get_db
 import time
 
 app = FastAPI()
@@ -32,12 +34,8 @@ async def documentation():
 #     return {"file_path": filepath}
 
 
-class Post(BaseModel):
-    title: str
-    content: str
-    published: bool = True
-    username: Union[str, None] = None
-    rating: Union[int, None] = None
+# create the table
+models.Base.metadata.create_all(bind=engine)
 
 
 while True:
@@ -57,14 +55,14 @@ while True:
 @app.get("/posts")
 async def get_posts():
     with connection.cursor() as cursor:
-        rows = "id, title, content, published, created_at"
+        rows = "id, title, content, published"
         cursor.execute(f"SELECT {rows} FROM posts")
         return {"data": cursor.fetchall()}
 
 @app.get("/posts/{id:int}")
 async def get_post(id: int):
     with connection.cursor() as cursor:
-        rows = "id, title, content, published, created_at"
+        rows = "id, title, content, published"
         cursor.execute(f"SELECT {rows} FROM posts where id=%s", params=[id])
         post = cursor.fetchone()
         if post:
@@ -73,11 +71,11 @@ async def get_post(id: int):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The post with id: {id} was not found")
 
 @app.post("/posts", status_code=status.HTTP_201_CREATED)
-async def create_posts(post: Post):
+async def create_posts(post: schemas.Post):
     with connection.cursor() as cursor:
         cursor.execute("""
             INSERT INTO posts (title, content, published) VALUES (%s, %s, %s) 
-            RETURNING id,title,content,published,created_at
+            RETURNING id,title,content,published
         """, [post.title,post.content,post.published])
         new_post = cursor.fetchone()
         if new_post:
@@ -94,11 +92,11 @@ async def create_posts(post: Post):
             }    
 
 @app.put("/posts/{id}")
-async def update_post(id: int, post: Post):
+async def update_post(id: int, post: schemas.Post):
     with connection.cursor() as cursor:
         cursor.execute("""
             UPDATE posts SET title=%s, content=%s, published=%s WHERE id=%s 
-            RETURNING  id,title,content,published, created_at
+            RETURNING  id,title,content,published
         """, [post.title,post.content,post.published, id])
         updated = cursor.fetchone()
         if updated:
