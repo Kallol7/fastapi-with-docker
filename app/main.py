@@ -1,23 +1,17 @@
-from fastapi import FastAPI, HTTPException, Response, status
+from fastapi import FastAPI, HTTPException, Response, status, Depends
 from fastapi.responses import RedirectResponse
-
-import psycopg
-from psycopg.rows import dict_row
-
+from sqlalchemy.orm import Session
 from . import models, schemas
 from .database import engine, get_db
-import time
+
+# create the table
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
 @app.get("/")
 async def homepage():
     return {"message": "Hello World"}
-
-@app.get("/api", include_in_schema=True)
-async def documentation():
-    return RedirectResponse(url='/docs')
-
 
 # # IN PATH PARAMETER, DON'T USE ANY WHITESPACE INSIDE CURLY BRACES -> {}
 # @app.get("/items/{item_no:int}")
@@ -33,90 +27,68 @@ async def documentation():
 # async def get_file(filepath):
 #     return {"file_path": filepath}
 
-
-# create the table
-models.Base.metadata.create_all(bind=engine)
-
-
-while True:
-    try:
-        # uvicorn app.main:app --reload
-        with open("secrets/dbconfig.txt","r") as f:
-            dbconfig = f.read()
-        connection = psycopg.connect(dbconfig, row_factory=dict_row)
-        dbconfig = "" # configuration info removed
-        print("Database connected.")
-        break
-    except Exception as e:
-        print("Database connection failed,", e)
-        time.sleep(2)
-
-
+# Read All Posts
 @app.get("/posts")
-async def get_posts():
-    with connection.cursor() as cursor:
-        rows = "id, title, content, published"
-        cursor.execute(f"SELECT {rows} FROM posts")
-        return {"data": cursor.fetchall()}
+async def get_posts(db: Session = Depends(get_db)):
+    posts = db.query(models.Post).all()
+    return {"data": posts}
 
+# Read One Post
 @app.get("/posts/{id:int}")
-async def get_post(id: int):
-    with connection.cursor() as cursor:
-        rows = "id, title, content, published"
-        cursor.execute(f"SELECT {rows} FROM posts where id=%s", params=[id])
-        post = cursor.fetchone()
-        if post:
-            return post
-        else:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The post with id: {id} was not found")
+async def get_post(id: int, db: Session = Depends(get_db)):
+    post = db.query(models.Post).filter(models.Post.id == id).first()
+    if post:
+        return post
+    else:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The post with id: {id} was not found")
 
+# Create Post
 @app.post("/posts", status_code=status.HTTP_201_CREATED)
-async def create_posts(post: schemas.Post):
-    with connection.cursor() as cursor:
-        cursor.execute("""
-            INSERT INTO posts (title, content, published) VALUES (%s, %s, %s) 
-            RETURNING id,title,content,published
-        """, [post.title,post.content,post.published])
-        new_post = cursor.fetchone()
-        if new_post:
-            connection.commit()
-            return {
-                "message": "Post has been created",
-                "data": new_post
-            }
-        else:
-            connection.rollback()
-            return {
-                "message": "Something went wrong",
-                "data": None
-            }    
+async def create_posts(post: schemas.Post, db: Session = Depends(get_db)):
+    new_post = models.Post(title=post.title, content=post.content, published=post.published)
+    try:
+        db.add(new_post)
+        db.commit()
+        db.refresh(new_post)
+        return {"message": "Post has been created", "data": new_post}
+    except Exception as e:
+        print(e)
+        db.rollback()
+        return {"message": "Something went wrong", "data": None}
 
+# Update Post
 @app.put("/posts/{id}")
-async def update_post(id: int, post: schemas.Post):
-    with connection.cursor() as cursor:
-        cursor.execute("""
-            UPDATE posts SET title=%s, content=%s, published=%s WHERE id=%s 
-            RETURNING  id,title,content,published
-        """, [post.title,post.content,post.published, id])
-        updated = cursor.fetchone()
-        if updated:
-            connection.commit()
-            return {
-                "message": "Post has been updated",
-                "data": updated
-            }
-        else:
-            connection.rollback()
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The post with id: {id} was not found")
+async def update_post(id: int, post: schemas.Post, db: Session = Depends(get_db)):
+    post_to_update = db.query(models.Post).filter(models.Post.id == id)
+    post_dict = post.model_dump(exclude_unset=True)
+    rowcount = post_to_update.update(post_dict, synchronize_session=False)
 
-@app.delete("/posts/{id:int}")
-async def delete_post(id: int):
-    with connection.cursor() as cursor:
-        cursor.execute("DELETE FROM posts where id=%s", params=[id])
-        if cursor.rowcount==1:
-            print("Deleted")
-            connection.commit()
-            return Response(status_code=status.HTTP_204_NO_CONTENT)
-        else:
-            connection.rollback()
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The post with id: {id} was not found")
+    if rowcount==0:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The post with id: {id} was not found")
+    
+    try:
+        db.commit()
+        updated_post = post_to_update.first()
+        return updated_post
+    except Exception as e:
+        print(e)
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="An error occurred while updating the post")
+
+# Delete Post
+@app.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_post(id: int, db: Session = Depends(get_db)):
+    found = db.query(models.Post).filter(models.Post.id == id).first()
+
+    if not found:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The post with id: {id} was not found")
+
+    try:
+        db.delete(found)
+        db.commit()
+    except Exception as e:
+        print(e)
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="An error occurred while deleting the post")
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

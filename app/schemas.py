@@ -7,3 +7,6 @@ class Post(BaseModel):
     published: bool = True
     username: Union[str, None] = None
     rating: Union[int, None] = None
+
+    class Config:
+        from_attributes = True
