@@ -1,4 +1,5 @@
-from fastapi import FastAPI, HTTPException, Response, status, Depends
+from typing import Annotated, List
+from fastapi import FastAPI, HTTPException, Response, status, Depends, Form
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from . import models, schemas
@@ -28,13 +29,13 @@ async def homepage():
 #     return {"file_path": filepath}
 
 # Read All Posts
-@app.get("/posts")
+@app.get("/posts", response_model=List[schemas.PostResponse])
 async def get_posts(db: Session = Depends(get_db)):
     posts = db.query(models.Post).all()
-    return {"data": posts}
+    return posts
 
 # Read One Post
-@app.get("/posts/{id:int}")
+@app.get("/posts/{id:int}", response_model=schemas.PostResponse)
 async def get_post(id: int, db: Session = Depends(get_db)):
     post = db.query(models.Post).filter(models.Post.id == id).first()
     if post:
@@ -43,22 +44,22 @@ async def get_post(id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The post with id: {id} was not found")
 
 # Create Post
-@app.post("/posts", status_code=status.HTTP_201_CREATED)
+@app.post("/posts", status_code=status.HTTP_201_CREATED, response_model=schemas.PostResponse)
 async def create_posts(post: schemas.Post, db: Session = Depends(get_db)):
-    new_post = models.Post(title=post.title, content=post.content, published=post.published)
+    new_post = models.Post(**post.model_dump())
     try:
         db.add(new_post)
         db.commit()
         db.refresh(new_post)
-        return {"message": "Post has been created", "data": new_post}
+        return new_post
     except Exception as e:
         print(e)
         db.rollback()
-        return {"message": "Something went wrong", "data": None}
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="An error occurred while creating the post")
 
 # Update Post
-@app.put("/posts/{id}")
-async def update_post(id: int, post: schemas.Post, db: Session = Depends(get_db)):
+@app.put("/posts/{id}", response_model=schemas.PostResponse)
+async def update_post(id: int, post: schemas.PostUpdate, db: Session = Depends(get_db)):
     post_to_update = db.query(models.Post).filter(models.Post.id == id)
     post_dict = post.model_dump(exclude_unset=True)
     rowcount = post_to_update.update(post_dict, synchronize_session=False)
@@ -92,3 +93,7 @@ async def delete_post(id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="An error occurred while deleting the post")
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+@app.get("/login")
+async def login(username: Annotated[str, Form()], password: Annotated[str, Form()]):
+    return {"username": username}

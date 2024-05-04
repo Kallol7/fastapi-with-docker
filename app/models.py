@@ -1,6 +1,7 @@
 from typing import Union
-from sqlalchemy import Integer, String, Boolean
+from sqlalchemy import Integer, String, Boolean, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.types import DateTime
 
 class Base(DeclarativeBase):
     pass
@@ -11,6 +12,22 @@ class Post(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str]
     content: Mapped[str]
-    published: Mapped[bool] = mapped_column(Boolean, default=True)
-    username: Mapped[Union[str, None]] = mapped_column(String, default=None)
-    rating: Mapped[Union[int, None]] = mapped_column(Integer, nullable=True, default=None)
+    published: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, 
+        server_default="True"
+    )
+    created_at: Mapped[DateTime] = mapped_column(
+        DateTime(timezone=True), nullable=False, 
+        server_default=text("now()")
+    )
+    username: Mapped[Union[str, None]] = mapped_column(String, nullable=True)
+    rating: Mapped[Union[int, None]] = mapped_column(Integer, nullable=True)
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    full_name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    email: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    phone: Mapped[Union[str, None]] = mapped_column(String, nullable=True)
+    password: Mapped[str] = mapped_column(String, nullable=False)
