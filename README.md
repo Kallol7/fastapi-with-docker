@@ -2,7 +2,7 @@
 - **FastAPI**
 - **PostgreSQL**
 - **Psycopg**
-- **SQLAlchemy ORM**
+- **SQLAlchemy**
 - **pgAdmin**
 - **Postman**
 - **Docker**
