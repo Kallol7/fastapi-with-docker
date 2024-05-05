@@ -1,7 +1,7 @@
 from typing import Union
 from sqlalchemy import Integer, String, Boolean, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy.types import DateTime
+from sqlalchemy.types import TIMESTAMP
 
 class Base(DeclarativeBase):
     pass
@@ -16,8 +16,8 @@ class Post(Base):
         Boolean, nullable=False, 
         server_default="True"
     )
-    created_at: Mapped[DateTime] = mapped_column(
-        DateTime(timezone=True), nullable=False, 
+    created_at: Mapped[TIMESTAMP] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=False, 
         server_default=text("now()")
     )
     username: Mapped[Union[str, None]] = mapped_column(String, nullable=True)
@@ -27,7 +27,7 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    full_name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    full_name: Mapped[str] = mapped_column(String, nullable=False)
     email: Mapped[str] = mapped_column(String, unique=True, nullable=False)
     phone: Mapped[Union[str, None]] = mapped_column(String, nullable=True)
     password: Mapped[str] = mapped_column(String, nullable=False)

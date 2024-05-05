@@ -32,3 +32,12 @@ class User(BaseModel):
     email: EmailStr
     phone: Union[str, None] = None
     password: str
+
+class UserResponse(BaseModel):
+    id: int
+    full_name: str
+    email: EmailStr
+    phone: Union[str, None] = None
+
+    class Config:
+        from_attributes = True
