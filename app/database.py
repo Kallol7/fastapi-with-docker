@@ -1,14 +1,25 @@
-import psycopg
-from psycopg.rows import dict_row
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-import time
+# import psycopg
+# from psycopg.rows import dict_row
+# from sqlalchemy import create_engine
+# from sqlalchemy.orm import sessionmaker
+# import time
+from fastapi import FastAPI
+from contextlib import asynccontextmanager
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+from . import models
 
 with open("secrets/postgres_pass.txt","r") as f:
-            postgres_pass = f.read()
-engine = create_engine(f"postgresql+psycopg://postgres:{postgres_pass}@localhost/fastapi")
+    postgres_pass = f.read()
+engine = create_async_engine(f"postgresql+psycopg://postgres:{postgres_pass}@localhost/fastapi")
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+SessionLocal  = async_sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    async with engine.begin() as connection:
+         await connection.run_sync(models.Base.metadata.create_all)
+    # everything before yield will run once before taking requests
+    yield
 
 # Dependency
 async def get_db():
@@ -16,21 +27,21 @@ async def get_db():
     try:
         yield db
     finally:
-        db.close()
+        await db.close()
 
-def connect_database():
-    while True:
-        try:
-            # uvicorn app.main:app --reload
-            with open("secrets/dbconfig.txt","r") as f:
-                dbconfig = f.read()
-            connection = psycopg.connect(dbconfig, row_factory=dict_row)
-            dbconfig = "" # configuration info removed
-            print("Database connected.")
-            break
-        except Exception as e:
-            print("Database connection failed,", e)
-            time.sleep(2)
+# def connect_database():
+#     while True:
+#         try:
+#             # uvicorn app.main:app --reload
+#             with open("secrets/dbconfig.txt","r") as f:
+#                 dbconfig = f.read()
+#             connection = psycopg.connect(dbconfig, row_factory=dict_row)
+#             dbconfig = "" # configuration info removed
+#             print("Database connected.")
+#             break
+#         except Exception as e:
+#             print("Database connection failed,", e)
+#             time.sleep(2)
 
 ## WITHOUT ORM ##
 # @app.get("/posts")

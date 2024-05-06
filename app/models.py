@@ -31,3 +31,7 @@ class User(Base):
     email: Mapped[str] = mapped_column(String, unique=True, nullable=False)
     phone: Mapped[Union[str, None]] = mapped_column(String, nullable=True)
     password: Mapped[str] = mapped_column(String, nullable=False)
+    created_at: Mapped[TIMESTAMP] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=False, 
+        server_default=text("now()")
+    )

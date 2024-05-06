@@ -13,7 +13,6 @@ class PostUpdate(BaseModel):
     title: Union[str, None] = None
     content: Union[str, None]= None
     published: Union[bool, None]= None
-    created_at: Union[datetime, None] = None
     username: Union[str, None] = None
     rating: Union[int, None] = None
 
@@ -38,6 +37,7 @@ class UserResponse(BaseModel):
     full_name: str
     email: EmailStr
     phone: Union[str, None] = None
+    created_at: datetime
 
     class Config:
         from_attributes = True

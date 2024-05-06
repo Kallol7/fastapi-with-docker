@@ -1,13 +1,14 @@
 from fastapi import FastAPI
 from . import models
-from .database import engine
+from .database import lifespan
 from .routes import post
 from .routes import user
 
+## For synchronous
 # create the table
-models.Base.metadata.create_all(bind=engine)
+# models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
 
 @app.get("/")
 async def homepage():
