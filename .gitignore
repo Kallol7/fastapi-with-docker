@@ -1,10 +1,10 @@
 # ----- FILE STRUCTURE ---- #
 # fastapi-with-docker/
 #   app/
+#     config.py
 #   data/
 #   env/
 #   secrets/
-#     dbconfig.txt
 #     pgadmin_pass.txt
 #     postgres_pass.txt
 #   .gitigore
@@ -13,9 +13,11 @@
 
 # only in the root folder
 /env
-/secrets
 
-# to protect the api keys, 
+# to protect the api keys and passwords
+/secrets
+/app/config.py
+
 # create a .env.example file at the very last stage
 .env
 

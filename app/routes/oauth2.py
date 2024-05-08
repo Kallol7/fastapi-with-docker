@@ -5,12 +5,11 @@ from jose import JWTError, jwt, ExpiredSignatureError
 from datetime import datetime, timedelta, timezone
 from copy import deepcopy
 from .. import schemas
+from .. import config
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-with open("secrets/SECRET_KEY.txt", "r", encoding="utf-8") as f:
-    SECRET_KEY = f.read()
-
+SECRET_KEY = config.SECRET_KEY
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30.0
 

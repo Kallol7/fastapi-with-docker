@@ -7,10 +7,9 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from . import models
+from . import config
 
-with open("secrets/postgres_pass.txt","r") as f:
-    postgres_pass = f.read()
-engine = create_async_engine(f"postgresql+psycopg://postgres:{postgres_pass}@localhost/fastapi")
+engine = create_async_engine(config.sqlalchemy_config)
 
 SessionLocal  = async_sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -33,10 +32,7 @@ async def get_db():
 #     while True:
 #         try:
 #             # uvicorn app.main:app --reload
-#             with open("secrets/dbconfig.txt","r") as f:
-#                 dbconfig = f.read()
-#             connection = psycopg.connect(dbconfig, row_factory=dict_row)
-#             dbconfig = "" # configuration info removed
+#             connection = psycopg.connect(config.psycopg_config, row_factory=dict_row)
 #             print("Database connected.")
 #             break
 #         except Exception as e:
