@@ -5,13 +5,14 @@ from sqlalchemy import select
 from .. import models, schemas
 from ..database import get_db
 from ..utils import pwd_context
+from .oauth2 import get_current_user
 
-route = APIRouter(
+router = APIRouter(
     tags=["Users"]
 )
 
 # Create User
-@route.post("/users", status_code=status.HTTP_201_CREATED, 
+@router.post("/users", status_code=status.HTTP_201_CREATED, 
     response_model=schemas.UserResponse, 
     response_model_exclude_none=True)
 async def create_account(user: schemas.User, db: AsyncSession = Depends(get_db)):
@@ -28,24 +29,25 @@ async def create_account(user: schemas.User, db: AsyncSession = Depends(get_db))
 
         if "psycopg.errors.UniqueViolation" in str(e):
             detail_msg = "Email already taken"
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=detail_msg)
+            raise HTTPException(status.HTTP_409_CONFLICT, detail=detail_msg)
         else:
             detail_msg = "An error occurred while creating the account"
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail_msg)
+            raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail_msg)
 
 # Get One User
-@route.get("/users/{id:int}", response_model=schemas.UserResponse,
-    response_model_exclude_none=True)
-async def get_user_info(id: int, db: AsyncSession = Depends(get_db)):
-    ## For synchronous
+@router.get("/users/me", response_model=schemas.UserResponse, response_model_exclude_none=True)
+async def get_user_profile(db: AsyncSession = Depends(get_db), token_data = Depends(get_current_user)):
+    id = token_data.id
+
+    # For synchronous
     # user = db.query(models.User).filter(models.User.id == id).first()
 
     statement = select(models.User).filter(models.User.id == id)
     result = await db.execute(statement)
     user = result.scalar()
+    
     if user:
         return user
     else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
-            detail=f"The user with id: {id} was not found"
-        )
+        detail_msg = f"The user with id: {id} was not found"
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail=detail_msg)

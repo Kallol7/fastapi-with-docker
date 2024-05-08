@@ -1,8 +1,7 @@
+# from . import models
 from fastapi import FastAPI
-from . import models
 from .database import lifespan
-from .routes import post
-from .routes import user
+from .routes import post, user, auth
 
 ## For synchronous
 # create the table
@@ -28,5 +27,6 @@ async def homepage():
 # async def get_file(filepath):
 #     return {"file_path": filepath}
 
-app.include_router(post.route)
-app.include_router(user.route)
+app.include_router(post.router)
+app.include_router(user.router)
+app.include_router(auth.router)
