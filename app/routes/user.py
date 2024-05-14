@@ -36,8 +36,8 @@ async def create_account(user: schemas.User, db: AsyncSession = Depends(get_db))
 
 # Get One User
 @router.get("/users/me", response_model=schemas.UserResponse, response_model_exclude_none=True)
-async def get_user_profile(db: AsyncSession = Depends(get_db), token_data = Depends(get_current_user)):
-    id = token_data.id
+async def get_user_profile(db: AsyncSession = Depends(get_db), current_user = Depends(get_current_user)):
+    id = current_user.id
 
     # For synchronous
     # user = db.query(models.User).filter(models.User.id == id).first()

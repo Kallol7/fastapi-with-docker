@@ -14,7 +14,7 @@ router = APIRouter(
 
 # Read All Posts
 @router.get("", response_model=List[schemas.PostResponse])
-async def get_posts(db: AsyncSession = Depends(get_db)):
+async def get_posts(db: AsyncSession = Depends(get_db), current_user = Depends(get_current_user)):
     ## For synchronous
     # posts = db.query(models.Post).all()
     
@@ -26,7 +26,7 @@ async def get_posts(db: AsyncSession = Depends(get_db)):
 
 # Read One Post
 @router.get("/{id:int}", response_model=schemas.PostResponse)
-async def get_post(id: int, db: AsyncSession = Depends(get_db)):
+async def get_post(id: int, db: AsyncSession = Depends(get_db), current_user = Depends(get_current_user)):
     ## For synchronous
     # post = db.query(models.Post).filter(models.Post.id == id).first()
 
@@ -41,7 +41,7 @@ async def get_post(id: int, db: AsyncSession = Depends(get_db)):
 
 # Create Post
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=schemas.PostResponse)
-async def create_posts(post: schemas.Post, db: AsyncSession = Depends(get_db)):
+async def create_posts(post: schemas.Post, db: AsyncSession = Depends(get_db), current_user = Depends(get_current_user)):
     new_post = models.Post(**post.model_dump())
     try:
         db.add(new_post)
@@ -55,7 +55,7 @@ async def create_posts(post: schemas.Post, db: AsyncSession = Depends(get_db)):
 
 # Update Post
 @router.put("/{id}", response_model=schemas.PostResponse)
-async def update_post(id: int, post: schemas.PostUpdate, db: AsyncSession = Depends(get_db)):
+async def update_post(id: int, post: schemas.PostUpdate, db: AsyncSession = Depends(get_db), current_user = Depends(get_current_user)):
     ## For synchronous
     # post_to_update = db.query(models.Post).filter(models.Post.id == id)
     # post_dict = post.model_dump(exclude_unset=True)
@@ -79,7 +79,7 @@ async def update_post(id: int, post: schemas.PostUpdate, db: AsyncSession = Depe
 
 # Delete Post
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_post(id: int, db: AsyncSession = Depends(get_db)):
+async def delete_post(id: int, db: AsyncSession = Depends(get_db), current_user = Depends(get_current_user)):
     ## For synchronous
     # found = db.query(models.Post).filter(models.Post.id == id).first()
 

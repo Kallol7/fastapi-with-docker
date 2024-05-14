@@ -6,6 +6,7 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+from sqlalchemy_utils import database_exists, create_database
 from . import models
 from . import config
 
@@ -15,6 +16,9 @@ SessionLocal  = async_sessionmaker(autocommit=False, autoflush=False, bind=engin
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    if not database_exists(engine.url):
+        create_database(engine.url)
+
     async with engine.begin() as connection:
          await connection.run_sync(models.Base.metadata.create_all)
     # everything before yield will run once before taking requests
