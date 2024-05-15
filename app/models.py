@@ -1,13 +1,15 @@
-from typing import Union
+from typing import Union, List
 from sqlalchemy import Integer, String, Boolean, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.types import TIMESTAMP
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import Relationship
 
 class Base(DeclarativeBase):
     pass
 
 class Post(Base):
-    __tablename__ = "posts"
+    __tablename__ = "posts_table"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str]
@@ -20,8 +22,9 @@ class Post(Base):
         TIMESTAMP(timezone=True), nullable=False, 
         server_default=text("now()")
     )
-    username: Mapped[Union[str, None]] = mapped_column(String, nullable=True)
     rating: Mapped[Union[int, None]] = mapped_column(Integer, nullable=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    user: Mapped["User"] = Relationship(back_populates="posts")
 
 class User(Base):
     __tablename__ = "users"
@@ -35,3 +38,4 @@ class User(Base):
         TIMESTAMP(timezone=True), nullable=False, 
         server_default=text("now()")
     )
+    posts: Mapped[List["Post"]] = Relationship(back_populates="user")

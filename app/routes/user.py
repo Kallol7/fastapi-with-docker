@@ -24,7 +24,6 @@ async def create_account(user: schemas.User, db: AsyncSession = Depends(get_db))
         await db.refresh(new_user)
         return new_user
     except Exception as e:
-        print(e)
         await db.rollback()
 
         if "psycopg.errors.UniqueViolation" in str(e):

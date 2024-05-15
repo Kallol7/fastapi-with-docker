@@ -6,14 +6,14 @@ class Post(BaseModel):
     title: str
     content: str
     published: bool = True
-    username: Union[str, None] = None
+    user_id: Union[int, None] = None
     rating: Union[int, None] = None
 
 class PostUpdate(BaseModel):
     title: Union[str, None] = None
     content: Union[str, None]= None
     published: Union[bool, None]= None
-    username: Union[str, None] = None
+    user_id: Union[int, None] = None
     rating: Union[int, None] = None
 
 class PostResponse(BaseModel):
@@ -21,6 +21,7 @@ class PostResponse(BaseModel):
     title: str
     content: str
     published: bool
+    user_id: int
     created_at: datetime
 
     class Config:
