@@ -16,7 +16,7 @@ router = APIRouter(
 @router.get("", response_model=List[schemas.PostResponse])
 async def get_posts(
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user: schemas.TokenData = Depends(get_current_user)
 ):
     ## For synchronous
     # posts = db.query(models.Post).filter(models.Post.user_id == current_user.id).all()
@@ -31,17 +31,18 @@ async def get_posts(
 @router.get("/{id:int}", response_model=schemas.PostResponse)
 async def get_post(
     id: int, db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user: schemas.TokenData = Depends(get_current_user)
 ):
     ## For synchronous
     # post = db.query(models.Post).filter(
     #     models.Post.id == id, models.Post.user_id == current_user.id
     # ).first()
 
-    result = await db.execute( 
-        select(models.Post).where(models.Post.id == id, models.Post.user_id == current_user.id)
-    )
-    post = result.scalar()
+    post = (await db.execute(
+        select(models.Post).
+        where(models.Post.id == id, models.Post.user_id == current_user.id))
+    ).scaler()
+
     if post:
         return post
     else:
@@ -49,10 +50,11 @@ async def get_post(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg)
 
 # Create Post
-@router.post("", status_code=status.HTTP_201_CREATED, response_model=schemas.PostResponse)
+@router.post("", status_code=status.HTTP_201_CREATED, 
+    response_model=schemas.PostResponse)
 async def create_posts(
     post: schemas.Post, db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user: schemas.TokenData = Depends(get_current_user)
 ):
     new_post = models.Post(**post.model_dump())
     new_post.user_id = current_user.id
@@ -71,7 +73,7 @@ async def create_posts(
 @router.put("/{id}", response_model=schemas.PostResponse)
 async def update_post(id: int, post: schemas.PostUpdate, 
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user: schemas.TokenData = Depends(get_current_user)
 ):
     ## For synchronous
     # post_to_update = db.query(models.Post).filter(
@@ -102,15 +104,15 @@ async def update_post(id: int, post: schemas.PostUpdate,
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 # Delete Post
-
-
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_post(
     id: int, db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user: schemas.TokenData = Depends(get_current_user)
 ):
     ## For synchronous
-    # found = db.query(models.Post).filter(models.Post.id == id, models.Post.user_id == current_user.id).first()
+    # found = db.query(models.Post).filter(
+    #     models.Post.id == id, models.Post.user_id == current_user.id
+    # ).first()
 
     found = await db.get(models.Post, id)
 

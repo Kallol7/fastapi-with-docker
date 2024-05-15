@@ -23,7 +23,10 @@ class Post(Base):
         server_default=text("now()")
     )
     rating: Mapped[Union[int, None]] = mapped_column(Integer, nullable=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), 
+        nullable=False
+    )
     user: Mapped["User"] = Relationship(back_populates="posts")
 
 class User(Base):
