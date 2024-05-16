@@ -1,5 +1,5 @@
 # ----- FILE STRUCTURE ---- #
-# fastapi-with-docker/
+# fastapi-with-docker/  <--(Root Folder)
 #   app/
 #     config.py
 #   data/

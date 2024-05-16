@@ -8,9 +8,9 @@ from contextlib import asynccontextmanager
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy_utils import database_exists, create_database
 from . import models
-from . import config
+from .config import postgres_user, postgres_pass, host, dbname
 
-engine = create_async_engine(config.sqlalchemy_config)
+engine = create_async_engine(f"postgresql+psycopg://{postgres_user}:{postgres_pass}@{host}/{dbname}")
 
 SessionLocal  = async_sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
