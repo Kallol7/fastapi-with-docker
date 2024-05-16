@@ -11,7 +11,7 @@ router = APIRouter(
     tags=["Users"]
 )
 
-# Create User
+# Create A User
 @router.post("/users", status_code=status.HTTP_201_CREATED, 
     response_model=schemas.UserResponse, 
     response_model_exclude_none=True)
@@ -36,8 +36,8 @@ async def create_account(
             detail_msg = "An error occurred while creating the account"
             raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail_msg)
 
-# Get One User
-@router.get("/users/me", response_model=schemas.UserResponse, 
+# Get User Info, Requires Login
+@router.get("/users/me", response_model=schemas.UserFullData, 
     response_model_exclude_none=True)
 async def get_user_profile(
     db: AsyncSession = Depends(get_db), 

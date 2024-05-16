@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, List
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
 
@@ -16,16 +16,27 @@ class PostUpdate(BaseModel):
     user_id: Union[int, None] = None
     rating: Union[int, None] = None
 
-class PostResponse(BaseModel):
+class PostBase(BaseModel):
     id: int
     title: str
     content: str
     published: bool
+
+class PostBasePlusCreateTime(PostBase):
+    created_at: datetime
+
+class PostResponse(PostBase):
     user_id: int
     created_at: datetime
 
     class Config:
         from_attributes = True
+
+class PostResponseSingle(PostResponse):
+    user: "UserResponse"
+
+class PostResponsePublic(PostResponse):
+    user: "UserShortResponse"
 
 class User(BaseModel):
     full_name: str
@@ -37,6 +48,10 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
+class UserShortResponse(BaseModel):
+    full_name: str
+    email: EmailStr
+
 class UserResponse(BaseModel):
     id: int
     full_name: str
@@ -46,6 +61,9 @@ class UserResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class UserFullData(UserResponse):
+    posts: List[PostBasePlusCreateTime]
 
 class Token(BaseModel):
     access_token: str

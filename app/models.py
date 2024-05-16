@@ -27,7 +27,8 @@ class Post(Base):
         ForeignKey("users.id", ondelete="CASCADE"), 
         nullable=False
     )
-    user: Mapped["User"] = Relationship(back_populates="posts")
+    ##### For Single Element Relationship, Use lazy="joined" #####
+    user: Mapped["User"] = Relationship(back_populates="posts", lazy="joined")
 
 class User(Base):
     __tablename__ = "users"
@@ -41,4 +42,5 @@ class User(Base):
         TIMESTAMP(timezone=True), nullable=False, 
         server_default=text("now()")
     )
-    posts: Mapped[List["Post"]] = Relationship(back_populates="user")
+    ##### For Collections/List, Use lazy="selectin" #####
+    posts: Mapped[List["Post"]] = Relationship(back_populates="user", lazy="selectin")

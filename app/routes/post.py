@@ -12,7 +12,19 @@ router = APIRouter(
     tags=["Posts"]
 )
 
-# Read All Posts
+# Read All Public Posts
+@router.get("/public", response_model=List[schemas.PostResponsePublic])
+async def get_public_posts(db: AsyncSession = Depends(get_db)):
+    ## For synchronous
+    # posts = db.query(models.Post).filter(models.Post.published == True).all()
+    
+    result = await db.execute(
+        select(models.Post).where(models.Post.published == True)
+    )
+    posts = result.scalars()
+    return posts
+
+# Read All Posts Created By User, Requires Login
 @router.get("", response_model=List[schemas.PostResponse])
 async def get_posts(
     db: AsyncSession = Depends(get_db),
@@ -27,8 +39,8 @@ async def get_posts(
     posts = result.scalars()
     return posts
 
-# Read One Post
-@router.get("/{id:int}", response_model=schemas.PostResponse)
+# Read One Post Created By User, Requires Login
+@router.get("/{id:int}", response_model=schemas.PostResponseSingle)
 async def get_post(
     id: int, db: AsyncSession = Depends(get_db),
     current_user: schemas.TokenData = Depends(get_current_user)
@@ -41,7 +53,7 @@ async def get_post(
     post = (await db.execute(
         select(models.Post).
         where(models.Post.id == id, models.Post.user_id == current_user.id))
-    ).scaler()
+    ).scalar()
 
     if post:
         return post
@@ -49,7 +61,7 @@ async def get_post(
         msg = f"The post with id: {id} was not found"
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg)
 
-# Create Post
+# Create A Post, Requires Login
 @router.post("", status_code=status.HTTP_201_CREATED, 
     response_model=schemas.PostResponse)
 async def create_posts(
@@ -69,7 +81,7 @@ async def create_posts(
         msg = "An error occurred while creating the post"
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
-# Update Post
+# Update A Post, Requires Login
 @router.put("/{id}", response_model=schemas.PostResponse)
 async def update_post(id: int, post: schemas.PostUpdate, 
     db: AsyncSession = Depends(get_db),
@@ -103,7 +115,7 @@ async def update_post(id: int, post: schemas.PostUpdate,
         msg = "An error occurred while updating the post"
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
-# Delete Post
+# Delete A Post, Requires Login
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_post(
     id: int, db: AsyncSession = Depends(get_db),
