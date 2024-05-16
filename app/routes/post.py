@@ -1,8 +1,8 @@
 # from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Union
 from fastapi import APIRouter, HTTPException, Response, status, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update
+from sqlalchemy import select, update, func
 from .. import models, schemas
 from ..database import get_db
 from .oauth2 import get_current_user
@@ -14,15 +14,52 @@ router = APIRouter(
 
 # Read All Public Posts
 @router.get("/public", response_model=List[schemas.PostResponsePublic])
-async def get_public_posts(db: AsyncSession = Depends(get_db)):
+async def get_public_posts(db: AsyncSession = Depends(get_db), 
+    limit: int = 5, skip: int = 0, search: Union[str, None] = None
+):
     ## For synchronous
     # posts = db.query(models.Post).filter(models.Post.published == True).all()
-    
-    result = await db.execute(
-        select(models.Post).where(models.Post.published == True)
-    )
-    posts = result.scalars()
-    return posts
+
+    limit = min(limit, 100)
+
+    if search and search.strip():
+        statement = (select(models.Post).where(
+            models.Post.published == True, models.Post.content.contains(search)
+        ).limit(limit).offset(skip))
+    else :
+        statement = (select(models.Post).where(
+            models.Post.published == True
+        ).limit(limit).offset(skip))
+
+    try:
+        posts = (await db.execute(statement)).scalars().all()
+    except:
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
+
+    if posts:
+        return posts
+
+    raise HTTPException(status.HTTP_404_NOT_FOUND)
+
+# Read All Public Posts, With Pagination
+@router.get("/public/page/{page_no:int}", response_model=List[schemas.PostResponsePublic])
+async def get_public_posts_paginated(db: AsyncSession = Depends(get_db),
+    page_no: int = 0
+):
+    page_no = max(page_no, 0)
+    limit = 5
+    skip = page_no * limit
+
+    try:
+        statement = select(models.Post).limit(limit).offset(skip)
+        posts = (await db.execute(statement)).scalars().all()
+    except:
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
+
+    if posts:
+        return posts
+
+    raise HTTPException(status.HTTP_404_NOT_FOUND)
 
 # Read All Posts Created By User, Requires Login
 @router.get("", response_model=List[schemas.PostResponse])
@@ -31,12 +68,15 @@ async def get_posts(
     current_user: schemas.TokenData = Depends(get_current_user)
 ):
     ## For synchronous
-    # posts = db.query(models.Post).filter(models.Post.user_id == current_user.id).all()
-    
-    result = await db.execute(
-        select(models.Post).where(models.Post.user_id == current_user.id)
-    )
-    posts = result.scalars()
+    # posts = db.query(models.Post).filter(
+    #     models.Post.user_id == current_user.id
+    # ).all()
+
+    posts = (await db.execute(
+        select(models.Post).
+        where(models.Post.user_id == current_user.id))
+    ).scalars()
+
     return posts
 
 # Read One Post Created By User, Requires Login
