@@ -1,0 +1,39 @@
+name: Test
+on: [push]
+jobs:
+  Explore-GitHub-Actions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Move production files
+        run: cp ./production-sample---paste-in-root/* ./ -r
+
+      - name: Check directory
+        run: ls -a
+
+      - name: Setup python and requirements 
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11.11'
+          cache: 'pip' # caching pip dependencies
+      - run: pip install -r requirements.txt
+
+      - name: Copy 
+        run: cp ./production-sample---paste-in-root/* ./ -r
+
+      - name: Docker compose
+        run: docker-compose up -d
+
+      - name: Start fastapi
+        run: fastapi run app/main.py
+      
+      - name: Curl omepage
+        run: curl 127.0.0.1:5000
+      
+
+       
+
+      
