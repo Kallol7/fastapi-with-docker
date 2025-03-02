@@ -6,6 +6,7 @@
 - **pgAdmin**
 - **Postman**
 - **Docker**
+- **Github Actions**
 
 ### Description:
 I Implemented REST API following the latest standard from the documentation of the tools and technologies I used. I used FastAPI, PostgreSQL, Psycopg, SQLAlchemy (with AsyncIO), pgAdmin, Postman, and Docker in this project. It is a simple social media implementation where users can sign up, log in, create, read, update, and delete posts. It does not have any user interface except Swagger UI. I made it this way to make it reusable for other projects. 

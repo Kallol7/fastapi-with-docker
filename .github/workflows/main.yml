@@ -1,36 +1,38 @@
 name: Test
 on: [push]
 jobs:
-  Explore-GitHub-Actions:
-    runs-on: ubuntu-latest
+  Sample-Production-Test:
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Move production files
+      - name: Copy production files
         run: cp ./production-sample---paste-in-root/* ./ -r
 
       - name: Check directory
         run: ls -a
 
       - name: Setup python and requirements 
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11.11'
           cache: 'pip' # caching pip dependencies
-      - run: pip install -r requirements.txt
+      - run: |
+          pip install -r requirements.txt
+          python --version
+          
 
-      - name: Copy 
-        run: cp ./production-sample---paste-in-root/* ./ -r
+      - name: Set up Docker
+        uses: docker/setup-docker-action@v4
 
       - name: Docker compose
-        run: docker-compose up -d
+        run: docker compose up -d
 
       - name: Start fastapi
-        run: fastapi run app/main.py
+        run:  python -m uvicorn app.main:app --host 0.0.0.0 --port 5000 &
       
-      - name: Curl omepage
+      - name: Curl Homepage
         run: curl 127.0.0.1:5000
       
 
